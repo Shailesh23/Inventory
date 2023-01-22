@@ -1,3 +1,8 @@
 package com.shal.inventory.model
 
-data class InventoryItem(val name : String, val imageRes : Int, val quantity : String)
+data class InventoryItem(
+    val id: String? = null,
+    var name: String ? = null,
+    var quantity: String ? = null,
+    var description: String? = null
+)
