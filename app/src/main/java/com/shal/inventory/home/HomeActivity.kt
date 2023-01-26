@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import com.shal.inventory.ui.theme.InventoryTheme
@@ -14,8 +13,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontFamily
@@ -48,10 +48,8 @@ class HomeActivity : ComponentActivity() {
                     )
                 )
                 BottomSheetScaffold(scaffoldState = bottomSheetScaffoldState,
-                    floatingActionButton =
-                    {
-                        FloatingActionButton(
-                            backgroundColor = colorResource(id = R.color.primary_color),
+                    floatingActionButton = {
+                        FloatingActionButton(backgroundColor = colorResource(id = R.color.primary_color),
                             onClick = {
                                 coroutineScope.launch {
                                     if (bottomSheetScaffoldState.bottomSheetState.isCollapsed) {
@@ -98,43 +96,56 @@ class HomeActivity : ComponentActivity() {
 
     @Composable
     private fun CreateBottomSheetWithItemForm(
-        inventoryItem: InventoryItem,
-        addItemListener: (InventoryItem) -> Unit
+        inventoryItem: InventoryItem, addItemListener: (InventoryItem) -> Unit
     ) {
+        var name by remember { mutableStateOf(inventoryItem.name ?: "") }
+        var description by remember { mutableStateOf(inventoryItem.description ?: "") }
+        var qunatity by remember { mutableStateOf(inventoryItem.quantity ?: "") }
+        val id = inventoryItem.id
+
+        Text(
+            text = if (inventoryItem.id.isNullOrEmpty()) "Add Inventory :" else "Update Inventory :",
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.Bold,
+            fontStyle = FontStyle.Normal,
+            fontSize = 14.sp,
+            modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp, bottom = 0.dp)
+        )
 
         Column(
             modifier = Modifier
                 .padding(10.dp)
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = if (inventoryItem.id.isNullOrEmpty()) "Create new item:" else "Update item:",
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.Normal,
-                fontStyle = FontStyle.Normal,
-                fontSize = 12.sp
+
+            OutlinedTextField(value = name,
+                onValueChange = {name = it},
+                label = { Text("Item") },
+                modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = inventoryItem.name ?: "",
-                onValueChange = { inventoryItem.name = it },
-                label = { Text("Item") }
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Thoughts?") },
+                modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = inventoryItem.description ?: "",
-                onValueChange = { inventoryItem.description = it },
-                label = { Text("Thoughts?") }
+                value = qunatity,
+                onValueChange = { qunatity = it },
+                label = { Text("How much?") },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            OutlinedTextField(
-                value = inventoryItem.quantity ?: "",
-                onValueChange = { inventoryItem.quantity = it },
-                label = { Text("How much?") }
-
-            )
-
-            Button(onClick = {}, modifier = Modifier.width(40.dp)) {
+            Button(
+                onClick = { addItemListener(InventoryItem(id, name, description, qunatity)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .padding(top = 10.dp)
+            ) {
                 Text(
                     modifier = Modifier.padding(10.dp, bottom = 0.dp),
                     text = if (inventoryItem.id.isNullOrEmpty()) "Add Item" else "Update Item",
