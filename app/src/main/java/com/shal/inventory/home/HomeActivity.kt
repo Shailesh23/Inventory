@@ -5,12 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.tooling.preview.Devices
-import androidx.compose.ui.tooling.preview.Preview
 import com.shal.inventory.ui.theme.InventoryTheme
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.*
@@ -75,6 +72,11 @@ class HomeActivity : ComponentActivity() {
                         }
                         inventoryItemInBottomSheet?.let { item ->
                             CreateBottomSheetWithItemForm(item) {
+                                //hide bottom before pushing items
+                                coroutineScope.launch {
+                                    bottomSheetScaffoldState.bottomSheetState.collapse()
+                                }
+
                                 homeViewModel.pushInventoryItem(it)
                             }
                             item.id?.ifEmpty { UUID.randomUUID() }
@@ -140,7 +142,7 @@ class HomeActivity : ComponentActivity() {
             )
 
             Button(
-                onClick = { addItemListener(InventoryItem(id, name, description, qunatity)) },
+                onClick = { addItemListener(InventoryItem(id, name, qunatity, description)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)

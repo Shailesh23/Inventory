@@ -17,15 +17,16 @@ class FirebaseRepo {
     }
 
     fun addInventoryItem(inventoryItem: InventoryItem) {
-        // Create a new user with a first and last name
-        val user = hashMapOf(
+        // create new inventory item
+        val inventoryMap = hashMapOf(
             NAME to inventoryItem.name,
-            QUANTITY to inventoryItem.quantity
+            QUANTITY to inventoryItem.quantity,
+            DESCRIPTION to inventoryItem.description
         )
 
         // Add a new document with a generated ID
         db.collection(collectionName)
-            .add(user)
+            .add(inventoryMap)
             .addOnSuccessListener { documentReference ->
                 Log.d(TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
             }
