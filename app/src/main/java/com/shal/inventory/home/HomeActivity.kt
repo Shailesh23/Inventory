@@ -8,24 +8,25 @@ import androidx.compose.foundation.layout.*
 import com.shal.inventory.ui.theme.InventoryTheme
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shal.inventory.R
 import com.shal.inventory.model.InventoryItem
 import com.shal.inventory.ui.theme.CreateInventoryItem
 import com.shal.inventory.ui.theme.ToolBar
 import kotlinx.coroutines.launch
 import java.util.UUID
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.colorResource
+import com.shal.inventory.R
 
 class HomeActivity : ComponentActivity() {
 
@@ -37,63 +38,96 @@ class HomeActivity : ComponentActivity() {
         setContent {
             InventoryTheme {
                 val inventoryData = this.homeViewModel.inventoryFeedData?.observeAsState()
-                val editInventoryItem = homeViewModel.editInventoryItem.observeAsState()
-                val coroutineScope = rememberCoroutineScope()
-                val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-                    bottomSheetState = rememberBottomSheetState(
-                        initialValue = BottomSheetValue.Collapsed
-                    )
+                val editInventoryItem by homeViewModel.editInventoryItem.observeAsState()
+                val bottomSheetState = rememberModalBottomSheetState(
+                    initialValue = ModalBottomSheetValue.Hidden
                 )
-                BottomSheetScaffold(scaffoldState = bottomSheetScaffoldState,
-                    floatingActionButton = {
-                        FloatingActionButton(backgroundColor = colorResource(id = R.color.primary_color),
-                            onClick = {
-                                coroutineScope.launch {
-                                    if (bottomSheetScaffoldState.bottomSheetState.isCollapsed) {
-                                        bottomSheetScaffoldState.bottomSheetState.expand()
-                                    } else {
-                                        bottomSheetScaffoldState.bottomSheetState.collapse()
-                                    }
-                                }
-                            }) {
-                            if (bottomSheetScaffoldState.bottomSheetState.isCollapsed) {
-                                Icon(Icons.Default.KeyboardArrowUp, "open bottomsheet")
-                            } else {
-                                Icon(Icons.Default.KeyboardArrowDown, "close bottomsheet")
-                            }
-                        }
-                    },
-                    floatingActionButtonPosition = FabPosition.End,
+
+                ModalBottomSheetLayout(
+                    sheetState = bottomSheetState,
                     sheetContent = {
-                        val inventoryItemInBottomSheet = if (editInventoryItem.value != null) {
-                            editInventoryItem.value
+                        val inventoryItemInBottomSheet = if (editInventoryItem != null) {
+                            editInventoryItem
                         } else {
                             InventoryItem()
                         }
-                        inventoryItemInBottomSheet?.let { item ->
-                            CreateBottomSheetWithItemForm(item) {
-                                //hide bottom before pushing items
-                                coroutineScope.launch {
-                                    bottomSheetScaffoldState.bottomSheetState.collapse()
-                                }
-
-                                homeViewModel.pushInventoryItem(it)
-                            }
-                            item.id?.ifEmpty { UUID.randomUUID() }
-                        }
-                    }) {
-                    Surface(color = MaterialTheme.colors.background) {
-                        Column {
-                            ToolBar("Inventory")
-                            inventoryData?.value?.let {
-                                CreateInventoryItem(it)
-                            }
-                        }
+                        CreateBottomSheetContent(inventoryItemInBottomSheet, bottomSheetState)
+                    }
+                ) {
+                    CreateScreenContentWithItemList(inventoryData, bottomSheetState) { editItem ->
+                        println("item clicked :: ${editItem.name}")
+                        homeViewModel.editInventoryItem.value = editItem
                     }
                 }
             }
         }
         homeViewModel.getInventoryItems()
+    }
+
+    @OptIn(ExperimentalMaterialApi::class)
+    @Composable
+    private fun CreateScreenContentWithItemList(
+        inventoryData: State<List<InventoryItem>?>?,
+        bottomSheetState: ModalBottomSheetState,
+        itemSelectedListener : (InventoryItem) -> Unit
+    ) {
+        Scaffold(
+            floatingActionButton = {
+                CreateFloatingButtonForBottomSheet(bottomSheetState)
+            },
+            floatingActionButtonPosition = FabPosition.End,
+        ) {
+            Surface(
+                color = MaterialTheme.colors.background,
+                modifier = Modifier.padding(paddingValues = it)
+            ) {
+                Column {
+                    ToolBar("Inventory")
+                    inventoryData?.value?.let { itemList ->
+                        CreateInventoryItem(itemList, itemSelectedListener)
+                    }
+                }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalMaterialApi::class)
+    @Composable
+    private fun CreateBottomSheetContent(
+        inventoryItemInBottomSheet: InventoryItem?,
+        bottomSheetState: ModalBottomSheetState
+    ) {
+        inventoryItemInBottomSheet?.let { item ->
+            val coroutineScope = rememberCoroutineScope()
+            CreateBottomSheetWithItemForm(item) {
+                //hide bottom before pushing items
+                coroutineScope.launch {
+                    bottomSheetState.hide()
+                }
+                homeViewModel.pushInventoryItem(it)
+            }
+            item.id?.ifEmpty { UUID.randomUUID() }
+        }
+    }
+
+    @OptIn(ExperimentalMaterialApi::class)
+    @Composable
+    private fun CreateFloatingButtonForBottomSheet(
+        bottomSheetState: ModalBottomSheetState
+    ) {
+        val coroutineScope = rememberCoroutineScope()
+        FloatingActionButton(backgroundColor = colorResource(id = R.color.primary_color),
+            onClick = {
+                coroutineScope.launch {
+                    if (bottomSheetState.isVisible.not()) {
+                        bottomSheetState.show()
+                    } else {
+                        bottomSheetState.hide()
+                    }
+                }
+            }) {
+            Icon(Icons.Default.Add, "open bottomsheet")
+        }
     }
 
     @Composable
@@ -121,8 +155,9 @@ class HomeActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            OutlinedTextField(value = name,
-                onValueChange = {name = it},
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
                 label = { Text("Item") },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -142,7 +177,16 @@ class HomeActivity : ComponentActivity() {
             )
 
             Button(
-                onClick = { addItemListener(InventoryItem(id, name, qunatity, description)) },
+                onClick = {
+                    addItemListener(
+                        InventoryItem(
+                            id,
+                            name.toString(),
+                            qunatity,
+                            description
+                        )
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
