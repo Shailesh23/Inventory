@@ -42,6 +42,7 @@ class HomeActivity : ComponentActivity() {
                 val bottomSheetState = rememberModalBottomSheetState(
                     initialValue = ModalBottomSheetValue.Hidden
                 )
+                val coroutineScope = rememberCoroutineScope()
 
                 ModalBottomSheetLayout(
                     sheetState = bottomSheetState,
@@ -51,11 +52,16 @@ class HomeActivity : ComponentActivity() {
                         } else {
                             InventoryItem()
                         }
-                        CreateBottomSheetContent(inventoryItemInBottomSheet, bottomSheetState)
+                        CreateBottomSheetContent(inventoryItemInBottomSheet)  {
+                            //hide bottom before pushing items
+                            coroutineScope.launch {
+                                bottomSheetState.hide()
+                            }
+                            homeViewModel.pushInventoryItem(it)
+                        }
                     }
                 ) {
                     CreateScreenContentWithItemList(inventoryData, bottomSheetState) { editItem ->
-                        println("item clicked :: ${editItem.name}")
                         homeViewModel.editInventoryItem.value = editItem
                     }
                 }
@@ -91,21 +97,13 @@ class HomeActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     private fun CreateBottomSheetContent(
         inventoryItemInBottomSheet: InventoryItem?,
-        bottomSheetState: ModalBottomSheetState
+        addItemListener: (InventoryItem) -> Unit
     ) {
         inventoryItemInBottomSheet?.let { item ->
-            val coroutineScope = rememberCoroutineScope()
-            CreateBottomSheetWithItemForm(item) {
-                //hide bottom before pushing items
-                coroutineScope.launch {
-                    bottomSheetState.hide()
-                }
-                homeViewModel.pushInventoryItem(it)
-            }
+            CreateBottomSheetWithItemForm(item, addItemListener)
             item.id?.ifEmpty { UUID.randomUUID() }
         }
     }
@@ -181,7 +179,7 @@ class HomeActivity : ComponentActivity() {
                     addItemListener(
                         InventoryItem(
                             id,
-                            name.toString(),
+                            name,
                             qunatity,
                             description
                         )

@@ -14,6 +14,7 @@ class FirebaseRepo {
         const val NAME = "name"
         const val QUANTITY = "quantity"
         const val DESCRIPTION = "description"
+        const val CREATION_TIME = "creation_time"
     }
 
     fun addInventoryItem(inventoryItem: InventoryItem) {
@@ -21,7 +22,8 @@ class FirebaseRepo {
         val inventoryMap = hashMapOf(
             NAME to inventoryItem.name,
             QUANTITY to inventoryItem.quantity,
-            DESCRIPTION to inventoryItem.description
+            DESCRIPTION to inventoryItem.description,
+            CREATION_TIME to inventoryItem.creationTime
         )
 
         // Add a new document with a generated ID
@@ -36,7 +38,7 @@ class FirebaseRepo {
     }
 
     fun getInventoryList(
-        successHandler: (List<InventoryItem>) -> Unit,
+        successHandler: (ArrayList<InventoryItem>) -> Unit,
         failureHandler: () -> Unit
     ) {
         db.collection(collectionName)
@@ -47,10 +49,13 @@ class FirebaseRepo {
                     Log.d(TAG, "${document.id} => ${document.data}")
                     inventoryList.add(
                         InventoryItem(
-                            id =  document.id,
+                            id = document.id,
                             name = document.data[NAME] as String,
                             quantity = document.data[QUANTITY] as String,
-                            description = document.data[DESCRIPTION] as String
+                            description = document.data[DESCRIPTION] as String,
+                            creationTime = if (document.data[CREATION_TIME] != null)
+                                document.data[CREATION_TIME] as Long
+                            else System.currentTimeMillis()
                         )
                     )
                 }
