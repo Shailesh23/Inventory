@@ -37,7 +37,7 @@ class HomeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             InventoryTheme {
-                val inventoryData = this.homeViewModel.inventoryFeedData?.observeAsState()
+                val inventoryData = this.homeViewModel.inventoryFeedData.observeAsState()
                 val editInventoryItem by homeViewModel.editInventoryItem.observeAsState()
                 val bottomSheetState = rememberModalBottomSheetState(
                     initialValue = ModalBottomSheetValue.Hidden
@@ -63,6 +63,9 @@ class HomeActivity : ComponentActivity() {
                 ) {
                     CreateScreenContentWithItemList(inventoryData, bottomSheetState) { editItem ->
                         homeViewModel.editInventoryItem.value = editItem
+                        coroutineScope.launch {
+                            bottomSheetState.show()
+                        }
                     }
                 }
             }
