@@ -9,6 +9,7 @@ import com.shal.inventory.ui.theme.InventoryTheme
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -25,6 +26,7 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
 import com.shal.inventory.R
 
@@ -61,7 +63,9 @@ class HomeActivity : ComponentActivity() {
                         }
                     }
                 ) {
-                    CreateScreenContentWithItemList(inventoryData, bottomSheetState) { editItem ->
+                    CreateScreenContentWithItemList(inventoryData, bottomSheetState, {
+                        homeViewModel.getInventoryItems()
+                    }) { editItem ->
                         homeViewModel.editInventoryItem.value = editItem
                         coroutineScope.launch {
                             bottomSheetState.show()
@@ -78,6 +82,7 @@ class HomeActivity : ComponentActivity() {
     private fun CreateScreenContentWithItemList(
         inventoryData: State<List<InventoryItem>?>?,
         bottomSheetState: ModalBottomSheetState,
+        actionButtonListener : (ImageVector) -> Unit,
         itemSelectedListener : (InventoryItem) -> Unit
     ) {
         Scaffold(
@@ -91,7 +96,7 @@ class HomeActivity : ComponentActivity() {
                 modifier = Modifier.padding(paddingValues = it)
             ) {
                 Column {
-                    ToolBar("Inventory")
+                    ToolBar("Inventory", Pair(actionButtonListener, Icons.Default.Refresh))
                     inventoryData?.value?.let { itemList ->
                         CreateInventoryItem(itemList, itemSelectedListener)
                     }
@@ -218,11 +223,11 @@ fun DefaultPreview() {
 fun getSampleData() = arrayListOf<InventoryItem>().apply {
     add(
         InventoryItem(
-            null,
+            "",
             "Toor Dal",
             "1kg",
             description = "we got this item last month so need to check if it has expired"
         )
     )
-    add(InventoryItem(null, "Chana Dal", "1kg"))
+    add(InventoryItem("", "Chana Dal", "1kg"))
 }
