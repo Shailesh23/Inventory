@@ -49,14 +49,9 @@ class HomeActivity : ComponentActivity() {
                 ModalBottomSheetLayout(
                     sheetState = bottomSheetState,
                     sheetContent = {
-//                        val inventoryItemInBottomSheet = if (editInventoryItem != null) {
-//                            editInventoryItem
-//                        } else {
-//                            InventoryItem()
-//                        }
                         val name = remember { mutableStateOf("") }
-                        var description = remember { mutableStateOf("") }
-                        var quantity = remember { mutableStateOf("") }
+                        val description = remember { mutableStateOf("") }
+                        val quantity = remember { mutableStateOf("") }
                         if (editInventoryItem != null) {
                             name.value = editInventoryItem?.name ?: ""
                             description.value = editInventoryItem?.description ?: ""

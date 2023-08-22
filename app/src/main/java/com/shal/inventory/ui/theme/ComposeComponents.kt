@@ -27,8 +27,9 @@ import com.shal.inventory.home.getSampleData
 import com.shal.inventory.model.InventoryItem
 
 @Composable
-fun ToolBar(title: String, action : Pair<(ImageVector)->Unit, ImageVector>) {
+fun ToolBar(title: String, action: Pair<(ImageVector) -> Unit, ImageVector>) {
     TopAppBar(title = { Text(title) },
+        backgroundColor = MaterialTheme.colors.primary,
         actions = {
             //create action with name and click listener
             IconButton(onClick = { action.first.invoke(action.second) }) {
@@ -50,7 +51,8 @@ fun CreateInventoryList(inventoryList: List<InventoryItem>, listener: (Inventory
     ) {
         items(inventoryList, key = {
             println("using ids : 4=${it.id}")
-            it.id }) { inventoryItem ->
+            it.id
+        }) { inventoryItem ->
             Card(
                 elevation = 4.dp,
                 modifier = Modifier
@@ -104,7 +106,7 @@ private fun CreateInventoryItem(item: InventoryItem, listener: (InventoryItem) -
 
     item.description?.let { description ->
         Text(
-            modifier = Modifier, text = description
+            modifier = Modifier, text = description,  color = Color.White
         )
     }
 }
