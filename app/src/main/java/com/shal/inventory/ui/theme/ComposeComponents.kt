@@ -2,7 +2,6 @@ package com.shal.inventory.ui.theme
 
 import androidx.compose.animation.core.Spring.DampingRatioHighBouncy
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,7 +23,6 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shal.inventory.R
 import com.shal.inventory.home.getSampleData
 import com.shal.inventory.model.InventoryItem
 
@@ -42,23 +40,9 @@ fun ToolBar(title: String, action : Pair<(ImageVector)->Unit, ImageVector>) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CreateInventoryItem(inventoryList: List<InventoryItem>, listener: (InventoryItem) -> Unit) {
+fun CreateInventoryList(inventoryList: List<InventoryItem>, listener: (InventoryItem) -> Unit) {
     val scrollState = rememberScrollState()
     LaunchedEffect(Unit) { scrollState.animateScrollTo(100) }
-/*
-    var list by remember { mutableStateOf(listOf("A", "B", "C")) }
-    LazyColumn {
-        item {
-            Button(onClick = { list = list.shuffled() }) {
-                Text("Shuffle")
-            }
-        }
-        items(list, key = { it }) {
-            Text("Item $it", Modifier.animateItemPlacement(
-                spring(dampingRatio = DampingRatioHighBouncy)
-            ))
-        }
-    }*/
 
     LazyColumn(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -129,7 +113,7 @@ private fun CreateInventoryItem(item: InventoryItem, listener: (InventoryItem) -
 @Composable
 fun DefaultPreview() {
     InventoryTheme {
-        CreateInventoryItem(getSampleData()) {
+        CreateInventoryList(getSampleData()) {
 
         }
     }

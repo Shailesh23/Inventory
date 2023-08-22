@@ -34,4 +34,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             //show error todo
         }
     }
+
+    fun updateInventoryItem(item: InventoryItem) {
+        firebaseRepo.updateInventoryItem(item)
+    }
 }

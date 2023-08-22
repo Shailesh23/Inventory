@@ -66,4 +66,21 @@ class FirebaseRepo {
                 failureHandler()
             }
     }
+
+    fun updateInventoryItem(inventoryItem: InventoryItem) {
+        val inventoryMap = hashMapOf(
+            NAME to inventoryItem.name,
+            QUANTITY to inventoryItem.quantity,
+            DESCRIPTION to inventoryItem.description,
+            CREATION_TIME to inventoryItem.creationTime
+        )
+
+        db.collection(collectionName).document(inventoryItem.id).set(inventoryMap)
+            .addOnSuccessListener { _ ->
+                Log.d(TAG, "DocumentSnapshot added with ${inventoryItem.name}")
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Error adding document", e)
+            }
+    }
 }

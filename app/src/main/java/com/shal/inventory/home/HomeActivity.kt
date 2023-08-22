@@ -21,12 +21,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shal.inventory.model.InventoryItem
-import com.shal.inventory.ui.theme.CreateInventoryItem
+import com.shal.inventory.ui.theme.CreateInventoryList
 import com.shal.inventory.ui.theme.ToolBar
 import kotlinx.coroutines.launch
 import java.util.UUID
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
 import com.shal.inventory.R
@@ -67,12 +66,16 @@ class HomeActivity : ComponentActivity() {
                                 name,
                                 description,
                                 quantity
-                            ) {
+                            ) { item, isAddItem ->
                                 //hide bottom before pushing items
                                 coroutineScope.launch {
                                     bottomSheetState.hide()
                                 }
-                                homeViewModel.pushInventoryItem(it)
+                                if(isAddItem) {
+                                    homeViewModel.pushInventoryItem(item)
+                                } else {
+                                    homeViewModel.updateInventoryItem(item)
+                                }
                             }
                         } else {
                             //need to show some anchor view for bottomsheet otherwise there will be an exception
@@ -80,7 +83,16 @@ class HomeActivity : ComponentActivity() {
                         }
                     }
                 ) {
-                    CreateScreenContentWithItemList(inventoryData, bottomSheetState, {
+                    CreateScreenContentWithItemList(inventoryData, fabClickHandler = {
+                        coroutineScope.launch {
+                            if (bottomSheetState.isVisible.not()) {
+                                homeViewModel.editInventoryItem.value = InventoryItem()
+                                bottomSheetState.show()
+                            } else {
+                                bottomSheetState.hide()
+                            }
+                        }
+                    }, {
                         homeViewModel.getInventoryItems()
                     }) { editItem ->
                         homeViewModel.editInventoryItem.value = editItem
@@ -94,17 +106,16 @@ class HomeActivity : ComponentActivity() {
         homeViewModel.getInventoryItems()
     }
 
-    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     private fun CreateScreenContentWithItemList(
         inventoryData: State<List<InventoryItem>?>?,
-        bottomSheetState: ModalBottomSheetState,
+        fabClickHandler: () -> Unit,
         actionButtonListener: (ImageVector) -> Unit,
         itemSelectedListener: (InventoryItem) -> Unit
     ) {
         Scaffold(
             floatingActionButton = {
-                CreateFloatingButtonForBottomSheet(bottomSheetState)
+                CreateFloatingButtonForBottomSheet(fabClickHandler)
             },
             floatingActionButtonPosition = FabPosition.End,
         ) {
@@ -115,7 +126,7 @@ class HomeActivity : ComponentActivity() {
                 Column {
                     ToolBar("Inventory", Pair(actionButtonListener, Icons.Default.Refresh))
                     inventoryData?.value?.let { itemList ->
-                        CreateInventoryItem(itemList, itemSelectedListener)
+                        CreateInventoryList(itemList, itemSelectedListener)
                     }
                 }
             }
@@ -128,7 +139,7 @@ class HomeActivity : ComponentActivity() {
         name: MutableState<String>,
         description: MutableState<String>,
         quantity: MutableState<String>,
-        addItemListener: (InventoryItem) -> Unit
+        addItemListener: (InventoryItem, Boolean) -> Unit
     ) {
         inventoryItemInBottomSheet?.let { item ->
             Log.i("Bottomsheet", "showing ${item.name} with ID ${item.id}")
@@ -140,19 +151,11 @@ class HomeActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
     private fun CreateFloatingButtonForBottomSheet(
-        bottomSheetState: ModalBottomSheetState
+        fabClickHandler : () -> Unit
     ) {
         val coroutineScope = rememberCoroutineScope()
         FloatingActionButton(backgroundColor = colorResource(id = R.color.primary_color),
-            onClick = {
-                coroutineScope.launch {
-                    if (bottomSheetState.isVisible.not()) {
-                        bottomSheetState.show()
-                    } else {
-                        bottomSheetState.hide()
-                    }
-                }
-            }) {
+            onClick = fabClickHandler) {
             Icon(Icons.Default.Add, "open bottomsheet")
         }
     }
@@ -163,12 +166,13 @@ class HomeActivity : ComponentActivity() {
         name: MutableState<String>,
         description: MutableState<String>,
         quantity: MutableState<String>,
-        addItemListener: (InventoryItem) -> Unit
+        addItemListener: (InventoryItem, Boolean) -> Unit
     ) {
         val id = inventoryItem.id
         Log.i("Bottomsheet", "setting ${inventoryItem.name} in bottom sheet")
+        val isAddItem = inventoryItem.id.isEmpty()
         Text(
-            text = if (inventoryItem.id.isNullOrEmpty()) "Add Inventory :" else "Update Inventory :",
+            text = if (isAddItem) "Add Inventory :" else "Update Inventory :",
             fontFamily = FontFamily.SansSerif,
             fontWeight = FontWeight.Bold,
             fontStyle = FontStyle.Normal,
@@ -212,7 +216,7 @@ class HomeActivity : ComponentActivity() {
                             name.value,
                             quantity.value,
                             description.value
-                        )
+                        ), isAddItem
                     )
                 },
                 modifier = Modifier
@@ -222,7 +226,7 @@ class HomeActivity : ComponentActivity() {
             ) {
                 Text(
                     modifier = Modifier.padding(10.dp, bottom = 0.dp),
-                    text = if (inventoryItem.id.isNullOrEmpty()) "Add Item" else "Update Item",
+                    text = if (isAddItem) "Add Item" else "Update Item",
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
                     fontStyle = FontStyle.Normal,
