@@ -1,6 +1,7 @@
 package com.shal.inventory.home
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -49,17 +50,33 @@ class HomeActivity : ComponentActivity() {
                 ModalBottomSheetLayout(
                     sheetState = bottomSheetState,
                     sheetContent = {
-                        val inventoryItemInBottomSheet = if (editInventoryItem != null) {
-                            editInventoryItem
-                        } else {
-                            InventoryItem()
-                        }
-                        CreateBottomSheetContent(inventoryItemInBottomSheet)  {
-                            //hide bottom before pushing items
-                            coroutineScope.launch {
-                                bottomSheetState.hide()
+//                        val inventoryItemInBottomSheet = if (editInventoryItem != null) {
+//                            editInventoryItem
+//                        } else {
+//                            InventoryItem()
+//                        }
+                        val name = remember { mutableStateOf("") }
+                        var description = remember { mutableStateOf("") }
+                        var quantity = remember { mutableStateOf("") }
+                        if (editInventoryItem != null) {
+                            name.value = editInventoryItem?.name ?: ""
+                            description.value = editInventoryItem?.description ?: ""
+                            quantity.value = editInventoryItem?.quantity ?: ""
+                            CreateBottomSheetContent(
+                                editInventoryItem,
+                                name,
+                                description,
+                                quantity
+                            ) {
+                                //hide bottom before pushing items
+                                coroutineScope.launch {
+                                    bottomSheetState.hide()
+                                }
+                                homeViewModel.pushInventoryItem(it)
                             }
-                            homeViewModel.pushInventoryItem(it)
+                        } else {
+                            //need to show some anchor view for bottomsheet otherwise there will be an exception
+                            Text(text = "")
                         }
                     }
                 ) {
@@ -82,8 +99,8 @@ class HomeActivity : ComponentActivity() {
     private fun CreateScreenContentWithItemList(
         inventoryData: State<List<InventoryItem>?>?,
         bottomSheetState: ModalBottomSheetState,
-        actionButtonListener : (ImageVector) -> Unit,
-        itemSelectedListener : (InventoryItem) -> Unit
+        actionButtonListener: (ImageVector) -> Unit,
+        itemSelectedListener: (InventoryItem) -> Unit
     ) {
         Scaffold(
             floatingActionButton = {
@@ -108,11 +125,15 @@ class HomeActivity : ComponentActivity() {
     @Composable
     private fun CreateBottomSheetContent(
         inventoryItemInBottomSheet: InventoryItem?,
+        name: MutableState<String>,
+        description: MutableState<String>,
+        quantity: MutableState<String>,
         addItemListener: (InventoryItem) -> Unit
     ) {
         inventoryItemInBottomSheet?.let { item ->
-            CreateBottomSheetWithItemForm(item, addItemListener)
-            item.id?.ifEmpty { UUID.randomUUID() }
+            Log.i("Bottomsheet", "showing ${item.name} with ID ${item.id}")
+            CreateBottomSheetWithItemForm(item, name, description, quantity, addItemListener)
+            item.id.ifEmpty { UUID.randomUUID() }
         }
     }
 
@@ -138,13 +159,14 @@ class HomeActivity : ComponentActivity() {
 
     @Composable
     private fun CreateBottomSheetWithItemForm(
-        inventoryItem: InventoryItem, addItemListener: (InventoryItem) -> Unit
+        inventoryItem: InventoryItem,
+        name: MutableState<String>,
+        description: MutableState<String>,
+        quantity: MutableState<String>,
+        addItemListener: (InventoryItem) -> Unit
     ) {
-        var name by remember { mutableStateOf(inventoryItem.name ?: "") }
-        var description by remember { mutableStateOf(inventoryItem.description ?: "") }
-        var qunatity by remember { mutableStateOf(inventoryItem.quantity ?: "") }
         val id = inventoryItem.id
-
+        Log.i("Bottomsheet", "setting ${inventoryItem.name} in bottom sheet")
         Text(
             text = if (inventoryItem.id.isNullOrEmpty()) "Add Inventory :" else "Update Inventory :",
             fontFamily = FontFamily.SansSerif,
@@ -162,22 +184,22 @@ class HomeActivity : ComponentActivity() {
         ) {
 
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
+                value = name.value,
+                onValueChange = { name.value = it },
                 label = { Text("Item") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
+                value = description.value,
+                onValueChange = { description.value = it },
                 label = { Text("Thoughts?") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = qunatity,
-                onValueChange = { qunatity = it },
+                value = quantity.value,
+                onValueChange = { quantity.value = it },
                 label = { Text("How much?") },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -187,9 +209,9 @@ class HomeActivity : ComponentActivity() {
                     addItemListener(
                         InventoryItem(
                             id,
-                            name,
-                            qunatity,
-                            description
+                            name.value,
+                            quantity.value,
+                            description.value
                         )
                     )
                 },
